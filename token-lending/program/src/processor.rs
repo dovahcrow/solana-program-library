@@ -45,9 +45,9 @@ pub mod switchboard_v2_devnet {
 }
 
 /// Processes an instruction
-pub fn process_instruction(
+pub fn process_instruction<'info, 'a: 'info>(
     program_id: &Pubkey,
-    accounts: &[AccountInfo],
+    accounts: &'a [AccountInfo<'info>],
     input: &[u8],
 ) -> ProgramResult {
     let instruction = LendingInstruction::unpack(input)?;
@@ -214,11 +214,11 @@ fn process_set_lending_market_owner(
     Ok(())
 }
 
-fn process_init_reserve(
+fn process_init_reserve<'info, 'a: 'info>(
     program_id: &Pubkey,
     liquidity_amount: u64,
     config: ReserveConfig,
-    accounts: &[AccountInfo],
+    accounts: &'a [AccountInfo<'info>],
 ) -> ProgramResult {
     if liquidity_amount == 0 {
         msg!("Reserve must be initialized with liquidity");
@@ -396,7 +396,10 @@ fn process_init_reserve(
     Ok(())
 }
 
-fn process_refresh_reserve(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
+fn process_refresh_reserve<'info, 'a: 'info>(
+    program_id: &Pubkey,
+    accounts: &'a [AccountInfo<'info>],
+) -> ProgramResult {
     let account_info_iter = &mut accounts.iter().peekable();
     let reserve_info = next_account_info(account_info_iter)?;
     let pyth_price_info = next_account_info(account_info_iter)?;
@@ -411,11 +414,11 @@ fn process_refresh_reserve(program_id: &Pubkey, accounts: &[AccountInfo]) -> Pro
     )
 }
 
-fn _refresh_reserve<'a>(
+fn _refresh_reserve<'info, 'a: 'info>(
     program_id: &Pubkey,
-    reserve_info: &AccountInfo<'a>,
-    pyth_price_info: &AccountInfo<'a>,
-    switchboard_feed_info: &AccountInfo<'a>,
+    reserve_info: &'a AccountInfo<'info>,
+    pyth_price_info: &'a AccountInfo<'info>,
+    switchboard_feed_info: &'a AccountInfo<'info>,
     clock: &Clock,
 ) -> ProgramResult {
     let mut reserve = Reserve::unpack(&reserve_info.data.borrow())?;
@@ -2332,9 +2335,9 @@ fn get_pyth_product_quote_currency(pyth_product: &pyth::Product) -> Result<[u8; 
     Err(LendingError::InvalidOracleConfig.into())
 }
 
-fn get_price(
-    switchboard_feed_info: &AccountInfo,
-    pyth_price_account_info: &AccountInfo,
+fn get_price<'info, 'a: 'info>(
+    switchboard_feed_info: &'a AccountInfo<'info>,
+    pyth_price_account_info: &'a AccountInfo<'info>,
     clock: &Clock,
 ) -> Result<Decimal, ProgramError> {
     let pyth_price = get_pyth_price(pyth_price_account_info, clock).unwrap_or_default();
@@ -2422,8 +2425,8 @@ fn get_pyth_price(pyth_price_info: &AccountInfo, clock: &Clock) -> Result<Decima
     Ok(market_price)
 }
 
-fn get_switchboard_price(
-    switchboard_feed_info: &AccountInfo,
+fn get_switchboard_price<'info, 'a: 'info>(
+    switchboard_feed_info: &'a AccountInfo<'info>,
     clock: &Clock,
 ) -> Result<Decimal, ProgramError> {
     const STALE_AFTER_SLOTS_ELAPSED: u64 = 240;
@@ -2470,8 +2473,8 @@ fn get_switchboard_price(
     Decimal::from(price).try_div(price_quotient)
 }
 
-fn get_switchboard_price_v2(
-    switchboard_feed_info: &AccountInfo,
+fn get_switchboard_price_v2<'info, 'a: 'info>(
+    switchboard_feed_info: &'a AccountInfo<'info>,
     clock: &Clock,
 ) -> Result<Decimal, ProgramError> {
     const STALE_AFTER_SLOTS_ELAPSED: u64 = 240;
